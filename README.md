@@ -1,4 +1,4 @@
-# Lastrear - Buscador de Imóveis 🏡
+# Leilão Fácil - Buscador de Imóveis 🏡
 
 ![Badge](https://img.shields.io/badge/Next.js-15.5.0-blue?logo=nextdotjs)
 ![Badge](https://img.shields.io/badge/React-19.1.0-61DAFB?logo=react)
@@ -12,7 +12,7 @@ Projeto acadêmico da **FATEC Zona Leste** em parceria com uma empresa imobiliá
 
 ## 📌 Descrição
 
-Este repositório contém o código-fonte do frontend do projeto **Lastrear**. Desenvolvido com Next.js, é a interface de usuário para uma plataforma inovadora de busca de imóveis em leilão ou venda direta.
+Este repositório contém o código-fonte do frontend do projeto **Leilão Fácil - Buscador de Imóveis**. Desenvolvido com Next.js, é a interface de usuário para uma plataforma inovadora de busca de imóveis em leilão ou venda direta.
 
 A interface consome dados de uma API externa, que realiza web scraping em sites de grandes instituições financeiras (Caixa, Santander, etc.), exibindo oportunidades de forma clara, organizada e intuitiva.
 
