@@ -1,11 +1,3 @@
-<div align="center">
-  <img src="./public/next.svg" width="120" alt="Next.js Logo" />
-  <img src="./public/globe.svg" width="60" alt="Globe" />
-  <img src="./public/file.svg" width="60" alt="File" />
-  <img src="./public/window.svg" width="60" alt="Window" />
-  <img src="./public/vercel.svg" width="120" alt="Vercel Logo" />
-</div>
-
 # Lastrear - Buscador de Imóveis 🏡
 
 ![Badge](https://img.shields.io/badge/Next.js-15.5.0-blue?logo=nextdotjs)
@@ -93,9 +85,3 @@ Este projeto é parte de um trabalho acadêmico da FATEC Zona Leste, em parceria
 ## 📄 Licença
 
 Este projeto é apenas para fins acadêmicos e não possui licença comercial.
-
----
-
-## 🤝 Contribuição
-
-Sinta-se à vontade para abrir issues e pull requests!
