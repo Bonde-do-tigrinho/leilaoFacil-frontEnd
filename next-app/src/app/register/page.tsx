@@ -63,7 +63,7 @@ export default function Cadastro(){
       <Toaster position="top-right" reverseOrder={false} />
       <div className="w-full h-screen flex justify-center md:grid grid-cols-2 bg-white">
         <article className="flex flex-col items-center justify-center gap-6">
-          <form className="w-[300px] md:w-[360px] xl:w-[500px] flex flex-col items-center justify-center gap-5">
+          <form className="w-[200px] md:w-[360px] xl:w-[400px] flex flex-col items-center justify-center gap-5 m-10">
             <div className="w-full justify-center flex flex-col items-center gap-2">
                <div className="pb-3 md:hidden">
                   <Logotipo />
