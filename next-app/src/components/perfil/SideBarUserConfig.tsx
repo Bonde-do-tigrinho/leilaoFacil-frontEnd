@@ -3,14 +3,25 @@ import { useSidebar } from "@/context/SideBarContext";
 import useWindowSize from "@/hooks/useWindowSize";
 import { IconArrowRight } from "@tabler/icons-react";
 import { useState } from "react";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth, useIsAdmin } from "@/context/AuthContext";
 import { usePerfilOption } from "@/context/PerfilOptionContext";
+import { Button } from "../Button";
+import { useRouter } from "next/navigation";
+
 
 export default function SideBarUserConfig() {
   const { user } = useAuth();
   const modeFavorite = () => setOption("favoritos");
   const { toggleSidebar, isOpenSidebar } = useSidebar();
   const {option, setOption } = usePerfilOption()
+  const router = useRouter();
+  const isAdmin = useIsAdmin();
+
+
+    const handleCadastrarUsuario = () => {
+    router.push("/cadastrar-usuario")
+  }
+
   return (
     <>
       <aside className="hidden md:flex w-[340px] min-h-screen border-r border-zinc-200 p-8 flex-col gap-4 ">
@@ -55,6 +66,16 @@ export default function SideBarUserConfig() {
               Favoritos
             </p>
           </div>
+
+          <div>
+            {isAdmin && (
+            <Button variant="primary" onClick={(handleCadastrarUsuario)} className="mb-4">
+            Cadastrar novo usuário
+            </Button>
+            )}
+          </div> 
+
+
       </aside>
       {isOpenSidebar ? (
         <aside className="fixed inset-0 bg-white z-50 w-[300px] min-h-screen border-r border-zinc-200 p-8 flex flex-col gap-4 overflow-y-auto">
