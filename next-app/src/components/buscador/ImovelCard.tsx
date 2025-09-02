@@ -11,22 +11,22 @@ export interface imovelProps {
 }
 
 export default function ImovelCard({ imovel }: imovelProps) {
-  const { user, favorites, addFavorite, removeFavorite } = useAuth();
+const { user, favorites, addFavorite, rmvFavorite, isLoading } = useAuth();
   const [isLoadingFavorite, setIsLoadingFavorite] = useState(false);
   const isFavorite = favorites.some(favId => favId.toString() === imovel._id.toString());
   
   const formaPagamento = ['financiamento', 'débito', 'crédito']
 
-  const toggleFavorite = async () => {
-    if (!user || !user.id) {
-      alert("Você precisa estar logado para adicionar aos favoritos.");
-      return;
-    }
-  
-    if (!imovel?._id) {
-      console.error("ID do imóvel não encontrado para favoritar.");
-      return;
-    }
+const toggleFavorite = async () => {
+  if (isLoading) {
+    console.log("Aguardando verificação de autenticação...");
+    return;
+  }
+
+  if (!user) {
+    alert("Você precisa estar logado para adicionar aos favoritos.");
+    return;
+  }
   
     const imovelId = imovel._id.toString();
   
@@ -35,7 +35,7 @@ export default function ImovelCard({ imovel }: imovelProps) {
     try {
       if (isFavorite) {
         console.log("Removendo favorito:", imovelId);
-        await removeFavorite(imovelId);
+        await rmvFavorite(imovelId);
       } else {
         console.log("Adicionando favorito:", imovelId);
         await addFavorite(imovelId);
@@ -160,7 +160,7 @@ export default function ImovelCard({ imovel }: imovelProps) {
       <button
           className="hidden lg:flex absolute bottom-6 right-6 cursor-pointer mt-auto p-2 disabled:opacity-50"
           onClick={toggleFavorite}
-          disabled={isLoadingFavorite}
+          disabled={isLoading || isLoadingFavorite}
           aria-label={isFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}
         >
           {isFavorite ? (

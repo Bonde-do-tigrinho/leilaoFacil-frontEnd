@@ -1,12 +1,12 @@
 'use client'
 import { Button } from "@/components/Button";
 import Field from "@/components/cadastro/Field";
-import { IconArrowRight, IconBriefcase, IconEye, IconEyeClosed, IconLock, IconUser, IconWallet } from "@tabler/icons-react";
+import { IconArrowLeft, IconArrowRight, IconBriefcase, IconEye, IconEyeClosed, IconLock, IconUser, IconWallet } from "@tabler/icons-react";
 import Image from "next/image";
 import { useState } from "react";
 import toast, { Toaster } from "react-hot-toast";
 import { useRouter } from "next/navigation";
-import Logotipo from "@/components/layout/Logotipo";
+import Logotipo from "../../components/layout/Logotipo";
 
 import { cadastrarUsuario } from "@/services/userService";
 
@@ -19,7 +19,6 @@ export default function Cadastro(){
   const [confirmPassword, setConfirmPassword] = useState("")
   const [type, setType] = useState("password");
   const [isEyeOpen, setIsEyeOpen] = useState(false);
-  const [tipoUsuario, setTipoUsuario] = useState("");
 
   const toggleEye = () => {
     if (isEyeOpen) {
@@ -39,21 +38,19 @@ export default function Cadastro(){
     }
 
     const userData = {
-      nome,
-      cargo,
-      email,
-      senha: password,
-      tipoUsuario: tipoUsuario === "admin"
+      nome: nome,
+      cargo: cargo,
+      email: email,
+      password: password,
+      confirmPassword: confirmPassword,
     };
+
+    console.log(userData);
 
     try {
       const response = await cadastrarUsuario(userData);
       toast.success("Usuário cadastrado com sucesso!");
-      setTimeout(() => {
-        router.push("/");
-      }, 1500);
-
-    } catch (error) {
+      } catch (error) {
       console.error("Erro ao cadastrar:", error);
       const errorMessage = 
       (error as any).response?.data?.message || "Erro ao tentar cadastrar. Tente novamente.";
@@ -66,6 +63,10 @@ export default function Cadastro(){
       <Toaster position="top-right" reverseOrder={false} />
       <div className="w-full h-screen flex justify-center md:grid grid-cols-2 bg-white">
         <article className="flex flex-col items-center justify-center gap-6">
+          <button onClick={() => router.back()} className=" flex items-center self-start cursor-pointer mt-[5rem] ml-[6rem] text-primary font-semibold">
+            <IconArrowLeft />
+            Voltar
+          </button>
           <form 
             onSubmit={(e) => {
               e.preventDefault(); 
@@ -156,22 +157,6 @@ export default function Cadastro(){
               >
                 {isEyeOpen ? <IconEye /> : <IconEyeClosed />}
               </button>
-            </Field>
-
-            <Field title="Tipo de usuario">
-              <div className="flex flex-1 gap-1 w-3xl">
-                <IconUser />
-                <select
-                  value={tipoUsuario}
-                  onChange={(e) => setTipoUsuario(e.target.value)}
-                  required
-                  className="outline-none text-zinc-500 w-full cursor-pointer"
-                >
-                  <option value="">Selecione o tipo de usuário</option>
-                  <option value="admin">Administrador</option>
-                  <option value="user">Usuário</option>
-                </select>
-              </div>
             </Field>
 
             <Button

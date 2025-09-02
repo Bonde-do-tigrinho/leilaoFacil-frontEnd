@@ -19,7 +19,7 @@ export default function SideBarUserConfig() {
 
 
     const handleCadastrarUsuario = () => {
-    router.push("/cadastrar-usuario")
+    router.push("/register")
   }
 
   return (
@@ -67,11 +67,15 @@ export default function SideBarUserConfig() {
             </p>
           </div>
 
-          <div>
+          <div
+            className={'w-full p-4 rounded-xl cursor-pointer'}
+          >
             {isAdmin && (
-            <Button variant="primary" onClick={(handleCadastrarUsuario)} className="mb-4">
+            <p onClick={handleCadastrarUsuario} className={`text-xl  font-semibold hover:text-primary transition-colors duration-300 ${
+                option === "favorites" ? "text-primary" : "text-zinc-600 "
+              }`}>
             Cadastrar novo usuário
-            </Button>
+            </p>
             )}
           </div> 
 

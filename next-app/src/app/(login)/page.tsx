@@ -30,7 +30,7 @@ export default function Login() {
   // 2. FUNÇÃO DE LOGIN ATUALIZADA
   const handleLogin = async () => {
     try {
-      const response = await login({ email, senha: password });
+      const response = await login({ email, password });
       const { token, message } = response.data;
       
       if (token) {

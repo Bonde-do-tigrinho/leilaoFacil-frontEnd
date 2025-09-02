@@ -39,7 +39,7 @@ export default function Config() {
           Authorization: `Bearer ${token}`, 
         },
         body: JSON.stringify({
-          id: user?.id, // Certifique-se de que o ID do usuário está disponível
+          id: user?.userId, 
           nome,
           cargo,
           email,
@@ -92,7 +92,7 @@ export default function Config() {
               <IconMail className="text-zinc-400" />
               <input
                 type="text"
-                placeholder={user?.nome}
+                placeholder="Digite seu nome"
                 onChange={(e) => setNome(e.target.value)}
                 value={nome}
                 className="outline-none text-zinc-500 w-full"

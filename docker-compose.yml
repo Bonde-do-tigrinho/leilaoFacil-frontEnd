@@ -2,18 +2,17 @@ services:
   next-app:
     build:
       context: ./next-app
-      dockerfile: Dockerfile  # Corrigido para o nome padrão "Dockerfile"
-    # A variável do Mongo não é necessária no frontend, pode ser removida
-    # environment:
-    #   MONGO_URI: mongodb+srv://...
+      dockerfile: Dockerfile  
     ports:
       - "3000:3000"
     networks:
       - app-network
-    # A linha "command: npm start" foi REMOVIDA daqui.
     volumes:
       - ./next-app:/app
       - /app/node_modules
+      - /app/.next
+    env_file:
+      - ./next-app/.env.local
 
 networks:
   app-network:
