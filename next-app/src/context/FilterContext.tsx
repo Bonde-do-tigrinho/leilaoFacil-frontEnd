@@ -1,10 +1,11 @@
 "use client";
-import { createContext, useContext, useState, useEffect } from "react";
-import { ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { Imovel } from "@/data/models/Imovel";
-import estados from "@/data/constants/Estados";
-import { parseCookies } from "nookies";
 
+// 1. Importe as funções que você já criou no seu serviço de imóveis!
+import { listarImoveisFiltrados, listarImoveis } from "@/services/imovelServices"; // Corrigido para imovelService (singular)
+
+// A interface Filtros está ótima
 interface Filtros {
   estado: string | null;
   cidade: string | null;
@@ -16,94 +17,66 @@ interface Filtros {
 
 interface FiltroContextType {
   filtros: Filtros;
-  setFiltros: (filtros: Filtros) => void;
-  buscarComFiltros: (novosFiltros: Filtros) => Promise<void>;
   imoveis: Imovel[];
+  isLoading: boolean; // Adicionamos o estado de loading
+  buscarComFiltros: (novosFiltros: Filtros) => Promise<void>;
 }
 
 const FiltroContext = createContext<FiltroContextType | undefined>(undefined);
 
 export const FiltroProvider = ({ children }: { children: ReactNode }) => {
   const [imoveis, setImoveis] = useState<Imovel[]>([]);
+  const [isLoading, setIsLoading] = useState(true); // Começa true para a busca inicial
   const [filtros, setFiltros] = useState<Filtros>({
-    estado: estados[0]?.name || null, // Estado padrão
+    // Seu estado de filtros inicial está bom
+    estado: null,
     cidade: null,
     bairro: [],
     tipoImovel: "indiferente",
     valor: "",
     banco: [],
-    
   });
 
+  // 2. A função de busca agora é muito mais simples
   const buscarComFiltros = async (novosFiltros: Filtros) => {
     setFiltros(novosFiltros);
-    // Aguarde o estado ser atualizado antes de buscar
-    const encontrados = await filtrarImoveisComFiltros(novosFiltros);
-    setImoveis(encontrados);
-  };
-
-  const imoveisSemFiltro = async () =>{
-    const response = await imoveisSemFiltroApi();
-    setImoveis(response);
-  }
-
-  // Função para buscar imóveis sem filtros do backend
-  const imoveisSemFiltroApi = async () =>{
+    setIsLoading(true);
     try {
-      const cookies = parseCookies(); 
-      const token = cookies['auth.token']; 
-      const response = await fetch("/api/imoveis", {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      if (!response.ok) {
-        throw new Error("Erro ao buscar imóveis");
-      }
-      const data = await response.json();
-      return data; 
+      // Chama a função do serviço, sem se preocupar com tokens!
+      const response = await listarImoveisFiltrados(novosFiltros);
+      setImoveis(response.data);
     } catch (error) {
-      console.error("Erro ao buscar imóveis:", error);
-      return [];
-    }
-  }
-  
-  // Função para buscar imóveis filtrados do backend
-  const filtrarImoveisComFiltros = async (filtrosParaBuscar: Filtros): Promise<Imovel[]> => {
-    try {
-      const cookies = parseCookies(); 
-      const token = cookies['auth.token']; 
-      const response = await fetch("/api/imoveisfiltrados", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`, 
-        },
-        body: JSON.stringify(filtrosParaBuscar),
-      });
-      if (!response.ok) throw new Error("Erro ao buscar imóveis");
-      const data = await response.json();
-      //console.log("Recebido da API:", data);
-      return data;
-    } catch (error) {
-      console.error("Erro ao buscar imóveis:", error);
-      return [];
+      console.error("Erro ao buscar imóveis com filtros:", error);
+      setImoveis([]);
+    } finally {
+      setIsLoading(false);
     }
   };
 
+  // 3. O useEffect para a busca inicial também fica mais simples
   useEffect(() => {
-    imoveisSemFiltro();
-  }, []);
+    const buscarImoveisIniciais = async () => {
+      setIsLoading(true);
+      try {
+        // Chama a função do serviço, sem se preocupar com tokens!
+        const response = await listarImoveis();
+        setImoveis(response.data);
+      } catch (error) {
+        console.error("Erro ao buscar imóveis iniciais:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    buscarImoveisIniciais();
+  }, []); // O array vazio garante que isso rode apenas uma vez
 
   return (
-    <FiltroContext.Provider value={{ filtros, setFiltros, buscarComFiltros, imoveis }}>
+    <FiltroContext.Provider value={{ filtros, imoveis, isLoading, buscarComFiltros }}>
       {children}
     </FiltroContext.Provider>
   );
 };
-
 
 export const useFiltro = () => {
   const context = useContext(FiltroContext);

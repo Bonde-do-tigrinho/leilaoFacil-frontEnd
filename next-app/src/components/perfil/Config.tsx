@@ -1,16 +1,16 @@
 "use client";
 import { Button } from "@/components/Button";
 import Field from "@/components/login/Field";
-import { useAuth, useIsAdmin } from "@/context/AuthContext";
+import { useAuth } from "@/context/AuthContext";
 import {IconEye,IconEyeClosed,IconLock,IconMail,} from "@tabler/icons-react";
 import Image from "next/image";
 import { useState } from "react";
 import toast, {Toaster}from "react-hot-toast";
 import { parseCookies } from "nookies"; 
+import { useRouter } from "next/router";
 
 export default function Config() {
   const { user } = useAuth();
-  const isAdmin = useIsAdmin();
   const [nome, setNome] = useState(user?.nome);
   const [cargo, setCargo] = useState(user?.cargo);
   const [email, setEmail] = useState(user?.email);
@@ -39,7 +39,7 @@ export default function Config() {
           Authorization: `Bearer ${token}`, 
         },
         body: JSON.stringify({
-          id: user?.id, // Certifique-se de que o ID do usuário está disponível
+          id: user?.userId, 
           nome,
           cargo,
           email,
@@ -73,12 +73,6 @@ export default function Config() {
 
       <div className="w-full h-[0.5px] bg-zinc-300 rounded-xl" />
 
-      {isAdmin && (
-        <Button variant="primary" onClick={() => {}} className="mb-4">
-          Cadastrar novo usuário
-        </Button>
-      )}
-
       <article className="w-full flex flex-col">
         <div className="flex flex-col gap-3">
           <h2 className="text-zinc-500 font-semibold text-xl">Meus dados</h2>
@@ -98,7 +92,7 @@ export default function Config() {
               <IconMail className="text-zinc-400" />
               <input
                 type="text"
-                placeholder={user?.nome}
+                placeholder="Digite seu nome"
                 onChange={(e) => setNome(e.target.value)}
                 value={nome}
                 className="outline-none text-zinc-500 w-full"

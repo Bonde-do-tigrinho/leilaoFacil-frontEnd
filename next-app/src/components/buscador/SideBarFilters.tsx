@@ -8,6 +8,9 @@ import { useSidebar } from "@/context/SideBarContext";
 import { IconArrowLeft } from "@tabler/icons-react";
 import { parseCookies } from 'nookies';
 
+import { listarBairrosDisponiveis } from '@/services/imovelServices';
+
+
 export default function SidebarFilters() {
   const {isOpenSidebar, toggleSidebar } = useSidebar()
   const { buscarComFiltros } = useFiltro();
@@ -24,25 +27,11 @@ export default function SidebarFilters() {
 
   const fetchBairros = async () => {
     try {
-      const cookies = parseCookies();
-      const token = cookies['auth.token'];
-      if (!token) {
-        throw new Error("Token não encontrado na sessão.");
-      }
-      const response = await fetch("/api/bairros", {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`, 
-        },
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.message || "Erro ao buscar os bairros.");
-      }
-      setBairrosDisponiveis(data.bairros);
-    } catch (error) {
+     const response = await listarBairrosDisponiveis();
+     setBairrosDisponiveis(response.data); 
+    }catch (error) {
       console.error("Erro ao buscar bairros:", error);
+      setBairrosDisponiveis([]);
     }
   };
 

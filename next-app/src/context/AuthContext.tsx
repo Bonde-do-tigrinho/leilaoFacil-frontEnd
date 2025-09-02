@@ -5,11 +5,15 @@ import {jwtDecode} from 'jwt-decode';
 import { setCookie, parseCookies, destroyCookie } from 'nookies';
 import { useRouter } from 'next/navigation';
 
+import { adicionarFavorito, removerFavorito } from '@/services/userService';
+import { listarImoveisFavoritos } from '@/services/imovelServices';
+
 type UserPayload = {
-  id: string;
+  userId: string;
   nome: string;
   email: string;
   cargo: string;
+  isAdmin: boolean;
 };
 
 type AuthContextType = {
@@ -20,7 +24,7 @@ type AuthContextType = {
   signOut: () => void;
   favorites: string[]; // IDs dos imóveis favoritos
   addFavorite: (imovelId: string) => Promise<void>;
-  removeFavorite: (imovelId: string) => Promise<void>;
+  rmvFavorite: (imovelId: string) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -35,71 +39,50 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
-  useEffect(() => {
+    useEffect(() => {
+  const checkUserAndLoadData = async () => {
     const cookies = parseCookies();
     const token = cookies['auth.token'];
 
-    if (token) {
-      try {
+    try {
+      if (token) {
         const decodedUser: UserPayload = jwtDecode(token);
         setUser(decodedUser);
-        fetchFavorites(decodedUser.id);
-      } catch (error) {
-        console.error("Token inválido ou expirado, limpando...", error);
-        destroyCookie(null, 'auth.token', { path: '/' });
-      }
-    }
-    setIsLoading(false);
-  }, []);
-
-  const fetchFavorites = async (userId: string) => {
-    try {
-      const token = parseCookies()['auth.token']; 
-
-      if (!token) {
-        throw new Error("Token não encontrado nos cookies.");
-      }
-
-      const res = await fetch(`/api/favoritos/buscarFavoritos?userId=${userId}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        const favoritosString = (data.favoritos || []).map((idObj: any) => {
-          if (idObj.toHexString) {
-            return idObj.toHexString();
-          }
-          if (idObj._id) {
-            return idObj._id.toString();
-          }
-          return idObj.toString();
-        });
-        setFavorites(favoritosString);
-      } else {
-        setFavorites([]);
-        const errorData = await res.json();
-        console.error("Erro ao buscar favoritos:", errorData.message);
+        await fetchFavorites();
       }
     } catch (error) {
-      setFavorites([]);
-      console.error("Erro ao buscar favoritos:", error);
+      console.error("Token inválido ou sessão expirada, limpando...", error);
+      destroyCookie(null, 'auth.token', { path: '/' });
+      setUser(null); 
+    } finally {
+
+      setIsLoading(false);
     }
   };
 
-  const signIn = (token: string) => {
+  checkUserAndLoadData();
+}, []);
+
+  const fetchFavorites = async () => {
+    try {
+      const response = await listarImoveisFavoritos();
+      const favoriteIds = response.data.map((imovel: any) => imovel._id.toString());
+      setFavorites(favoriteIds);
+    } catch (error) {
+      console.error("Contexto: Erro ao buscar favoritos via serviço.", error);
+      setFavorites([]);
+    }
+  };
+
+const signIn = (token: string) => {
     try {
       const decodedUser: UserPayload = jwtDecode(token);
       setCookie(null, 'auth.token', token, {
-        maxAge: 60 * 60 * 24 * 30,
+        maxAge: 60 * 60 * 24 * 30, // 30 dias
         path: '/',
       });
       setUser(decodedUser);
-      fetchFavorites(decodedUser.id);
+      fetchFavorites(); // Busca os favoritos assim que o usuário loga
       router.push('/buscador');
     } catch (error) {
       console.error("Erro ao decodificar token no login:", error);
@@ -110,55 +93,26 @@ export function AuthProvider({ children }: AuthProviderProps) {
     destroyCookie(null, 'auth.token', { path: '/' });
     setUser(null);
     setFavorites([]);
+    router.push('/login'); // Redireciona para o login ao sair
   };
 
-  const addFavorite = async (imovelId: string) => {
+ const addFavorite = async (imovelId: string) => {
     if (!user) return;
     try {
-      const cookies = parseCookies(); // Recupera os cookies
-      const token = cookies['auth.token']; // Obtém o token dos cookies
-      const res = await fetch('/api/favoritos/adicionar', {
-        method: 'POST',
-        headers: 
-        { 
-          'Content-Type': 'application/json', 
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({ imovelId, userId: user.id }),
-      });
-      if (res.ok) {
-        await fetchFavorites(user.id);
-      } else {
-        const errorData = await res.json();
-        console.error("Erro ao adicionar favorito:", errorData.message);
-      }
+      await adicionarFavorito(imovelId);
+      await fetchFavorites(); // RECARREGA a lista de favoritos para atualizar a UI
     } catch (error) {
-      console.error("Erro ao adicionar favorito:", error);
+      console.error("Contexto: Erro ao adicionar favorito.", error);
     }
   };
   
-  const removeFavorite = async (imovelId: string) => {
+  const rmvFavorite = async (imovelId: string) => {
     if (!user) return;
     try {
-      const cookies = parseCookies(); // Recupera os cookies
-      const token = cookies['auth.token']; // Obtém o token dos cookies
-      const res = await fetch('/api/favoritos/remover', {
-        method: 'POST',
-        headers: 
-        { 
-          'Content-Type': 'application/json', 
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({ imovelId, userId: user.id }),
-      });
-      if (res.ok) {
-        await fetchFavorites(user.id);
-      } else {
-        const errorData = await res.json();
-        console.error("Erro ao remover favorito:", errorData.message);
-      }
+      await removerFavorito(imovelId);
+      await fetchFavorites(); // RECARREGA a lista de favoritos para atualizar a UI
     } catch (error) {
-      console.error("Erro ao remover favorito:", error);
+      console.error("Contexto: Erro ao remover favorito.", error);
     }
   };
 
@@ -171,7 +125,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       signOut,
       favorites,
       addFavorite,
-      removeFavorite,
+      rmvFavorite,
     }}>
       {children}
     </AuthContext.Provider>
@@ -188,5 +142,5 @@ export const useAuth = () => {
 
 export const useIsAdmin = () => {
   const { user } = useAuth();
-  return user?.cargo === 'admin';
+  return user?.isAdmin === true;
 };

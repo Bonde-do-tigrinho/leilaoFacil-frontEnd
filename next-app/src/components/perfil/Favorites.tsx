@@ -8,46 +8,29 @@ import { useAuth } from "@/context/AuthContext";
 import { Imovel } from "@/data/models/Imovel";
 import { parseCookies } from "nookies"; 
 
+import { listarImoveisFavoritos } from "@/services/imovelServices";
+
 export default function Favorites() {
-  const { setTipo, toggleSidebar } = useSidebar();
+  const { setTipo } = useSidebar();
+  const { user, isLoading, isAuthenticated } = useAuth(); 
+  const [busca, setBusca] = useState("");
+  const [imoveisFavoritos, setImoveisFavoritos] = useState<Imovel[]>([]);
+  const [isFetching, setIsFetching] = useState(true);
   const setUserConfigSidebar = () => setTipo("user_config");
   useEffect(() => {
     setUserConfigSidebar();
-  }, []);
-
-  const { user, isLoading, isAuthenticated } = useAuth(); 
-  const [busca, setBusca] = useState("");
-  const [imoveisFavoritos, setImoveisFavoritos] = useState<Imovel[]>([]); 
+  }, []); 
 
   const fetchFavoritos = async () => {
+    setIsFetching(true);
     try {
-      const token = parseCookies()['auth.token']; // Recupera o token dos cookies
-
-      if (!token) {
-        throw new Error("Token não encontrado nos cookies.");
-      }
-      
-      if (!user || !user.id) { 
-        throw new Error("Usuário não encontrado ou inválido.");
-      }
-  
-      const response = await fetch(`/api/favoritos/buscarFavoritos?userId=${user.id}`, {
-        method: 'GET', // Mantido como GET
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`, // Adicionado o cabeçalho Authorization
-        },
-      });
-  
-      if (!response.ok) {
-         throw new Error()//return console.log(`Erro na API: ${response.status}`);
-      }
-  
-      const data = await response.json();
-      setImoveisFavoritos(data.favoritos || []);
+      const response = await listarImoveisFavoritos();
+      setImoveisFavoritos(response.data || []);
     } catch (error) {
       console.error("Erro ao buscar favoritos:", error);
-      setImoveisFavoritos([]);
+      setImoveisFavoritos([]); 
+    } finally {
+      setIsFetching(false);
     }
   };
 
@@ -56,14 +39,15 @@ export default function Favorites() {
   }, [setTipo]); 
 
   useEffect(() => {
-    if (!isLoading && isAuthenticated && user?.id) {
+    if (!isLoading && isAuthenticated) {
       fetchFavoritos();
     } else if (!isLoading && !isAuthenticated) {
       setImoveisFavoritos([]);
+      setIsFetching(false);
     }
   }, [user, isLoading, isAuthenticated]); 
 
-  const imoveisPesquisados = useMemo(() => {
+const imoveisPesquisados = useMemo(() => {
     if (!busca) {
       return imoveisFavoritos; 
     }
@@ -71,6 +55,11 @@ export default function Favorites() {
       return imovel.endereco?.toLowerCase().includes(busca.toLowerCase());
     });
   }, [busca, imoveisFavoritos]);
+
+  // Se a autenticação ou os favoritos ainda estiverem carregando, mostre uma mensagem
+  if (isLoading || isFetching) {
+    return <p>Carregando seus imóveis favoritos...</p>;
+  }
 
   return (
     <>

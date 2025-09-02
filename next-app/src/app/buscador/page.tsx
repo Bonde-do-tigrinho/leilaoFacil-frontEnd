@@ -152,7 +152,7 @@ export default function Buscador() {
           currentPage={currentPage}
           setCurrentPage={setCurrentPage}
           totalPages={totalPages}
-         />side
+         />
       </section>
     </Template>
   );

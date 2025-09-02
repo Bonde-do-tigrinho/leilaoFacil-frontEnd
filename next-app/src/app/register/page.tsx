@@ -1,12 +1,14 @@
 'use client'
 import { Button } from "@/components/Button";
 import Field from "@/components/cadastro/Field";
-import { IconArrowRight, IconBriefcase, IconEye, IconEyeClosed, IconLock, IconUser, IconWallet } from "@tabler/icons-react";
+import { IconArrowLeft, IconArrowRight, IconBriefcase, IconEye, IconEyeClosed, IconLock, IconUser, IconWallet } from "@tabler/icons-react";
 import Image from "next/image";
 import { useState } from "react";
 import toast, { Toaster } from "react-hot-toast";
 import { useRouter } from "next/navigation";
-import Logotipo from "@/components/layout/Logotipo";
+import Logotipo from "../../components/layout/Logotipo";
+
+import { cadastrarUsuario } from "@/services/userService";
 
 export default function Cadastro(){
   const router = useRouter();
@@ -17,7 +19,6 @@ export default function Cadastro(){
   const [confirmPassword, setConfirmPassword] = useState("")
   const [type, setType] = useState("password");
   const [isEyeOpen, setIsEyeOpen] = useState(false);
-  const [tipoUsuario, setTipoUsuario] = useState("");
 
   const toggleEye = () => {
     if (isEyeOpen) {
@@ -29,32 +30,31 @@ export default function Cadastro(){
     }
   };
 
+  // 2. ATUALIZAR a função de cadastro
   const handleRegister = async () => {
-    try {
-      const userData={
-        nome,
-        cargo,
-        email,
-        password,
-        confirmPassword
-      }
-      
-    const response = await fetch("/api/auth/cadastro", {
-      method: "POST", // Define o método como POST
-      headers: {
-        "Content-Type": "application/json", // Define o tipo de conteúdo como JSON
-      },
-      body: JSON.stringify(userData), // Envia os dados no corpo da requisição
-    });
-      const data = await response.json();
+    if (password !== confirmPassword) {
+      toast.error("As senhas não coincidem!");
+      return;
+    }
 
-      if (response.ok) {
-        toast.success(data.message);
-        return router.push("/");
-      } 
-      toast.error(data.message || "Erro ao cadastrar");
-    } catch (error) {
-      console.error("Faltaram dados:", error);
+    const userData = {
+      nome: nome,
+      cargo: cargo,
+      email: email,
+      password: password,
+      confirmPassword: confirmPassword,
+    };
+
+    console.log(userData);
+
+    try {
+      const response = await cadastrarUsuario(userData);
+      toast.success("Usuário cadastrado com sucesso!");
+      } catch (error) {
+      console.error("Erro ao cadastrar:", error);
+      const errorMessage = 
+      (error as any).response?.data?.message || "Erro ao tentar cadastrar. Tente novamente.";
+      toast.error(errorMessage);
     }
   };
 
@@ -63,13 +63,24 @@ export default function Cadastro(){
       <Toaster position="top-right" reverseOrder={false} />
       <div className="w-full h-screen flex justify-center md:grid grid-cols-2 bg-white">
         <article className="flex flex-col items-center justify-center gap-6">
-          <form className="w-[200px] md:w-[360px] xl:w-[400px] flex flex-col items-center justify-center gap-5 m-10">
+          <button onClick={() => router.back()} className=" flex items-center self-start cursor-pointer mt-[5rem] ml-[6rem] text-primary font-semibold">
+            <IconArrowLeft />
+            Voltar
+          </button>
+          <form 
+            onSubmit={(e) => {
+              e.preventDefault(); 
+              handleRegister();
+            }} 
+            className="w-[200px] md:w-[360px] xl:w-[400px] flex flex-col items-center justify-center gap-5 m-10"
+          >
             <div className="w-full justify-center flex flex-col items-center gap-2">
-               <div className="pb-3 md:hidden">
+                <div className="pb-3 md:hidden">
                   <Logotipo />
                 </div>
               <h2 className="text-primary text-4xl font-semibold uppercase ">Cadastro</h2>
             </div>
+
             <Field title="Nome">
               <IconUser />
               <input
@@ -77,6 +88,7 @@ export default function Cadastro(){
                 placeholder="Digite o nome do usuário"
                 onChange={(e) => setNome(e.target.value)}
                 value={nome}
+                required
                 className="outline-none text-zinc-500 w-full"
               />
             </Field>
@@ -88,17 +100,19 @@ export default function Cadastro(){
                 placeholder="Digite o cargo do usuário"
                 onChange={(e) => setCargo(e.target.value)}
                 value={cargo}
+                required
                 className="outline-none text-zinc-500 w-full"
               />
             </Field>
 
             <Field title="Email">
-              <IconBriefcase />
+              <IconBriefcase /> 
               <input
                 type="email"
                 placeholder="Digite o email do usuário"
                 onChange={(e) => setEmail(e.target.value)}
                 value={email}
+                required
                 className="outline-none text-zinc-500 w-full"
               />
             </Field>
@@ -111,6 +125,7 @@ export default function Cadastro(){
                   placeholder="Digite a senha de usuário"
                   onChange={(e) => setPassword(e.target.value)}
                   value={password}
+                  required
                   className="outline-none text-zinc-500 w-full"
                 />
               </div>
@@ -131,6 +146,7 @@ export default function Cadastro(){
                   placeholder="Confirme a senha de usuário"
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   value={confirmPassword}
+                  required
                   className="outline-none text-zinc-500 w-full"
                 />
               </div>
@@ -143,38 +159,13 @@ export default function Cadastro(){
               </button>
             </Field>
 
-            <Field title="Tipo de usuario">
-              <div className="flex flex-1 gap-1 w-3xl">
-                <IconUser />
-                <select
-                  value={tipoUsuario}
-                  onChange={(e) => setTipoUsuario(e.target.value)}
-                  className="outline-none text-zinc-500 w-full cursor-pointer"
-                >
-                  <option value="">Selecione o tipo de usuário</option>
-                  <option value="admin">Administrador</option>
-                  <option value="user">Usuário</option>
-                </select>
-              </div>
-            </Field>
-
             <Button
-                type="button"
-                onClick={handleRegister}
-                variant="primary"
-                size="full"
-              >
-                <p className="text-xl font-semibold">{"Cadastrar"}</p>
+              type="submit"
+              variant="primary"
+              size="full"
+            >
+              <p className="text-xl font-semibold">{"Cadastrar"}</p>
             </Button>
-
-            {/* <div className="w-full flex justify-start">
-              <p className="text-sm text-zinc-600">
-                Já possui uma conta?
-                <Link href={"/"}>
-                  <span className="text-primary cursor-pointer"> Login </span>
-                </Link>
-              </p>
-            </div> */}
             
           </form>
         </article>
