@@ -22,7 +22,7 @@ type AuthContextType = {
   isLoading: boolean;
   signIn: (token: string) => void;
   signOut: () => void;
-  favorites: string[]; // IDs dos imóveis favoritos
+  favorites: string[];
   addFavorite: (imovelId: string) => Promise<void>;
   rmvFavorite: (imovelId: string) => Promise<void>;
 };

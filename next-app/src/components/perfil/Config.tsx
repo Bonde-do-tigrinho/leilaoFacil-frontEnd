@@ -4,59 +4,71 @@ import Field from "@/components/login/Field";
 import { useAuth } from "@/context/AuthContext";
 import {IconEye,IconEyeClosed,IconLock,IconMail,} from "@tabler/icons-react";
 import Image from "next/image";
-import { useState } from "react";
+import { use, useEffect, useState } from "react";
 import toast, {Toaster}from "react-hot-toast";
 import { parseCookies } from "nookies"; 
 import { useRouter } from "next/router";
 
+import { atualizarUsuario } from "@/services/userService";
+
 export default function Config() {
-  const { user } = useAuth();
+  const {user, isLoading } = useAuth();
   const [nome, setNome] = useState(user?.nome);
   const [cargo, setCargo] = useState(user?.cargo);
   const [email, setEmail] = useState(user?.email);
   const [password, setPassword] = useState("*****");
-
   const [type, setType] = useState("password");
   const [isEyeOpen, setIsEyeOpen] = useState(false);
-  const toggleEye = () => {
-    if (isEyeOpen) {
-      setType("password");
-      setIsEyeOpen(false);
-    } else {
-      setType("text");
-      setIsEyeOpen(true);
+
+    console.log("Objeto 'user' recebido do AuthContext:", user);
+
+  useEffect(() => {
+    if(user){
+      setNome(user.nome);
+      setCargo(user.cargo);
+      setEmail(user.email);
+    }
+  }, [user]);
+
+   const toggleEye = () => {
+    setIsEyeOpen(!isEyeOpen);
+    setType(isEyeOpen ? "password" : "text");
+  };
+
+const handleSave = async () => {
+    const dadosParaAtualizar: {
+      Nome?: string;
+      Cargo?: string;
+      Email?: string;
+      Password?: string;
+    } = {
+      Nome: nome,
+      Cargo: cargo,
+      Email: email,
+    };
+
+    if (password) {
+      dadosParaAtualizar.Password = password;
+    }
+
+    try {
+      await atualizarUsuario(dadosParaAtualizar);
+      toast.success("Informações atualizadas com sucesso!");
+      setPassword(""); 
+    } catch (error: any) {
+      console.error("Erro ao salvar alterações:", error);
+      const errorMessage = error.response?.data?.message || "Ocorreu um erro ao salvar as alterações.";
+      toast.error(errorMessage);
     }
   };
 
-  const handleSave = async () => {
-    try {
-      const cookies = parseCookies(); // Recupera os cookies
-      const token = cookies['auth.token']; // Obtém o token dos cookies
-      const response = await fetch("/api/auth/alterarInfo", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`, 
-        },
-        body: JSON.stringify({
-          id: user?.userId, 
-          nome,
-          cargo,
-          email,
-          senha: password,
-        }),
-      });
-      if (response.ok) {
-        toast.success("Informações atualizadas com sucesso!");
-      } else {
-        const errorData = await response.json();
-        toast.error(`Erro ao atualizar informações: ${errorData.message}`);
-      }
-    } catch (error) {
-      console.error("Erro ao salvar alterações:", error);
-      toast.error("Ocorreu um erro ao salvar as alterações.");
-    }
-  };
+  if (isLoading) {
+    return <p>Carregando seu perfil...</p>;
+  }
+
+  if (!user) {
+    return <p>Usuário não encontrado. Por favor, faça o login.</p>;
+  }
 
   return (
     <div className="flex flex-col gap-4">
