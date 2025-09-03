@@ -56,7 +56,6 @@ const imoveisPesquisados = useMemo(() => {
     });
   }, [busca, imoveisFavoritos]);
 
-  // Se a autenticação ou os favoritos ainda estiverem carregando, mostre uma mensagem
   if (isLoading || isFetching) {
     return <p>Carregando seus imóveis favoritos...</p>;
   }

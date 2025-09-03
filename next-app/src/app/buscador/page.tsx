@@ -1,31 +1,26 @@
 "use client";
 import Template from "@/components/layout/Template";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import ImovelCard from "@/components/buscador/ImovelCard";
 import Image from "next/image";
 import SubFiltros from "@/components/buscador/SubFiltros";
 import { useFiltro } from "@/context/FilterContext";
 import { useSidebar } from "@/context/SideBarContext";
-import { IconArrowRight } from "@tabler/icons-react";
+import { IconArrowRight, IconSearch} from "@tabler/icons-react";
 import Paginacao from "@/components/buscador/Paginacao";
 import { Imovel } from "@/data/models/Imovel";
 
 export default function Buscador() {
-  const { setTipo } = useSidebar();
   useEffect(() => {
     setTipo("filter");
   }, []);
-  const { toggleSidebar } = useSidebar();
+  const { setTipo, toggleSidebar } = useSidebar();
   const [filter, setFilter] = useState<"valor" | "dataLeilao" | null>(null);
+  const [busca, setBusca] = useState("");
   const [crescente, setCrescente] = useState(false);
-  const { imoveis: fetchedImoveis } = useFiltro();
-  const [sortedImoveis, setSortedImoveis] = useState<Imovel[]>([]);
-  const [currentPage, setCurrentPage] = useState(1); // Estado para a página atual
-  const itemsPerPage = 15; // Número de imóveis por página
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentImoveis = sortedImoveis.slice(startIndex, endIndex);
-  const totalPages = Math.ceil(sortedImoveis.length / itemsPerPage);
+  const { imoveis: fetchedImoveis, isLoading } = useFiltro();
+  const [currentPage, setCurrentPage] = useState(1); 
+  const itemsPerPage = 15; 
 
   const handleFiltro = (tipo: "valor" | "dataLeilao" | null) => {
   if (filter === tipo) {
@@ -41,61 +36,63 @@ export default function Buscador() {
   }
 };
 
-  useEffect(() => {
-    let imoveisParaOrdenar = [...fetchedImoveis];
+const imoveisFiltrados = useMemo(() => {
+    if (!busca.trim()) {
+      return fetchedImoveis; // Se a busca for vazia, usa a lista completa.
+    }
+    const termoBuscaLower = busca.toLowerCase();
+    return fetchedImoveis.filter(imovel =>
+      imovel.endereco?.toLowerCase().includes(termoBuscaLower) ||
+      imovel.cidade?.toLowerCase().includes(termoBuscaLower) ||
+      imovel.numero_imovel?.toString().includes(termoBuscaLower)
+    );
+  }, [fetchedImoveis, busca]);
 
-    const compararDatas = (
-      datasLeiloesA?: Date[],
-      datasLeiloesB?: Date[]
-    ): number => {
-      const dateObjA = datasLeiloesA?.[0];
-      const dateObjB = datasLeiloesB?.[0];
+  const sortedImoveis = useMemo(() => {
+    const imoveisParaOrdenar = [...imoveisFiltrados];
 
-      if (dateObjA && dateObjB) {
-        return new Date(dateObjA).getTime() - new Date(dateObjB).getTime();
-      }
-
-      if (dateObjA) return -1;
-      if (dateObjB) return 1;
-
-      return 0;
+    const compararDatas = (datasA?: Date[], datasB?: Date[]): number => {
+      const dateA = datasA?.[0] ? new Date(datasA[0]).getTime() : null;
+      const dateB = datasB?.[0] ? new Date(datasB[0]).getTime() : null;
+      if (dateA && dateB) return dateA - dateB;
+      return dateB ? -1 : dateA ? 1 : 0;
     };
-
+    
     if (filter === "valor") {
-      imoveisParaOrdenar.sort((a, b) => {
-        const valorA = a.valor_avaliacao;
-        const valorB = b.valor_avaliacao;
-
-        let comparacao = 0;
-        if (isNaN(valorA) && isNaN(valorB)) comparacao = 0;
-        else if (isNaN(valorA)) comparacao = 1; // NaNs no final
-        else if (isNaN(valorB)) comparacao = -1; // NaNs no final
-        else comparacao = valorA - valorB;
-
-        return crescente ? comparacao : comparacao * -1;
-      });
+        imoveisParaOrdenar.sort((a, b) => {
+            const valorA = a.valor_avaliacao ?? -1;
+            const valorB = b.valor_avaliacao ?? -1;
+            return valorA - valorB;
+        });
     } else if (filter === "dataLeilao") {
-      imoveisParaOrdenar.sort((a, b) => {
-        return crescente
-          ? compararDatas(a.datas_leiloes, b.datas_leiloes) // Ascendente: datas mais antigas primeiro
-          : compararDatas(b.datas_leiloes, a.datas_leiloes); // Descendente: datas mais recentes primeiro
-      });
-    } else if (filter === null) {
-      // Ordenação padrão quando nenhum filtro está ativo
-      if (!crescente) {
-        imoveisParaOrdenar.sort((a, b) =>
-          compararDatas(b.datas_leiloes, a.datas_leiloes)
-        );
-      } else {
-        imoveisParaOrdenar.sort((a, b) =>
-          compararDatas(a.datas_leiloes, b.datas_leiloes)
-        );
-      }
+        imoveisParaOrdenar.sort((a, b) => compararDatas(a.datas_leiloes, b.datas_leiloes));
     }
 
-    setSortedImoveis(imoveisParaOrdenar);
-    setCurrentPage(1); // Reinicia para a primeira página ao alterar os filtros
-  }, [fetchedImoveis, filter, crescente]);
+    if (!crescente) {
+        imoveisParaOrdenar.reverse();
+    }
+
+    return imoveisParaOrdenar;
+  }, [imoveisFiltrados, filter, crescente]);
+
+  const totalPages = Math.ceil(sortedImoveis.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentImoveis = sortedImoveis.slice(startIndex, endIndex);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [imoveisFiltrados, filter, crescente]);
+
+   if (isLoading) {
+    return (
+      <Template>
+        <section className="w-full flex justify-center items-center p-8">
+          <p>Carregando imóveis...</p>
+        </section>
+      </Template>
+    );
+  }
 
   return (
     <Template>
@@ -120,10 +117,23 @@ export default function Buscador() {
         />
 
         <div className="w-full h-[0.5px] bg-zinc-300 rounded-2xl my-2" />
-        <p className="text-zinc-500">
-          Foram encontrados{" "}
-          <span className="font-semibold">{sortedImoveis.length}</span> imóveis
-        </p>
+          <div className="flex flex-row justify-between w-full pr-[8rem]">
+            <p className="text-zinc-500">
+              Foram encontrados{" "}
+            <span className="font-semibold">{sortedImoveis.length}</span> imóveis
+          </p>
+
+          <div className="w-80 h-12 flex items-center justify-between border border-zinc-300 text-zinc-500 rounded-lg px-3">
+            <input
+              type="text"
+              placeholder="Pesquisar imóveis..."
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
+              className="flex-1 focus:border-none outline-none"
+            />
+            <IconSearch />
+          </div>
+        </div>
 
         <div className="flex flex-col gap-6 mb-10">
           {currentImoveis.length !== 0 ? (

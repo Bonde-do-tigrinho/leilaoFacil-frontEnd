@@ -19,10 +19,6 @@ export default function Header() {
       <nav className="max-w-7xl w-full flex justify-between items-center relative">
         <Logotipo />
         <div className="flex gap-9 items-center justify-end">
-          <Link href={"/buscador"} className="flex gap-1 text-zinc-600 transition-colors duration-300 hover:text-primary">
-            <IconSearch />
-            <p className="hidden md:flex">Buscar</p>
-          </Link>
           <Link onClick={() => setOption('favorites')} href={"/perfil"} className="flex gap-1 text-zinc-600 transition-colors duration-300 hover:text-primary">
             <IconHeart />
             <p className="hidden md:flex">Favoritos</p>

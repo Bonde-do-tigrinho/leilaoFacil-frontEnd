@@ -21,17 +21,20 @@ export default function Template(props: templateProps) {
   }, []);
   return (
     <>
-      
-      <div className="flex flex-col overflow-x-hidden h-full">
+      <div className="flex flex-col overflow-x-hidden h-screen">
         <Header />
+        <div className="flex flex-1 overflow-hidden ">
+          <aside className="sticky top-0 h-screen overflow-y-auto pb-[5rem] no-scrollbar"> 
+            <SideBar />
+          </aside>
+
         <main
-          className={`w-full flex items-start justify-start gap-4 h-full  ${
-            props.className ?? ``
-          }`}
-        >
-          <SideBar />
-          {props.children}
-        </main>
+          className={`flex-1 overflow-y-auto p-8 ${props.className ?? ''}`}
+          >
+            {props.children}
+          </main>
+      </div>
+
       </div>
     </>
   );

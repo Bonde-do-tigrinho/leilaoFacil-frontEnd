@@ -8,6 +8,10 @@ export const cadastrarUsuario = (dadosUsuarios) => {
     return api.post('/api/usuario', dadosUsuarios);
 };
 
+export const atualizarUsuario = (dados) => {
+  return api.patch('/api/usuario', dados);
+};
+
 export const login = (credentials) => {
     return api.post('/api/usuario/login', credentials);
 };

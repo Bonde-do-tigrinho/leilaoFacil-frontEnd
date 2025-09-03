@@ -4,6 +4,14 @@
 
 @custom-variant dark (&:is(.dark *));
 
+.no-scrollbar ::-webkit-scrollbar{
+  display: none;
+}
+.no-scrollbar{
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 body {
   font-family: "Inter", Helvetica, sans-serif;
 }
